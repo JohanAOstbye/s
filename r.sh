@@ -13,9 +13,9 @@ talosctl -n 10.97.124.229 kubeconfig "$KC" --force
 export KUBECONFIG="$KC"
 
 echo "== service-account-issuer per apiserver"
-kubectl -n kube-system get pod -l tier=control-plane,component=kube-apiserver \
-  -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.spec.containers[0].command}{"\n"}{end}' \
-  | sed -E 's/\t.*(--service-account-issuer=[^"]*).*/\t\1/'
+for p in $(kubectl -n kube-system get pods -o name | grep kube-apiserver); do
+  echo "$p $(kubectl -n kube-system get "$p" -o yaml | grep -o 'service-account-issuer=[^"]*')"
+done
 
 for ns in $NAMESPACES; do
   echo "== restart $ns"
