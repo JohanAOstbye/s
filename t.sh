@@ -4,6 +4,7 @@
 # Usage:
 #   curl -sL raw.githubusercontent.com/JohanAOstbye/s/main/t.sh | bash -s -- --dry-run
 #   curl -sL raw.githubusercontent.com/JohanAOstbye/s/main/t.sh | bash
+#   curl -sL raw.githubusercontent.com/JohanAOstbye/s/main/t.sh | NODES="10.97.124.230" bash
 #
 # Afterwards restart pods using SA tokens (old issuer tokens are rejected):
 #   for ns in kube-system azure-arc arc-workload-identity kubelet-serving-cert-approver; do
@@ -11,7 +12,7 @@
 #   done
 set -euo pipefail
 
-NODES="10.97.124.229 10.97.124.230 10.97.124.231"
+NODES="${NODES:-10.97.124.229 10.97.124.230 10.97.124.231}"
 DRY=""
 [ "${1:-}" = "--dry-run" ] && DRY="--dry-run"
 
@@ -29,8 +30,7 @@ for n in $NODES; do
   talosctl -n "$n" patch mc --patch @"$PATCH" $DRY
   [ -n "$DRY" ] && continue
   echo "Waiting for kube-apiserver on $n..."
-  sleep 20
-  until talosctl -n "$n" get staticpodstatus 2>/dev/null | grep kube-apiserver | grep -q True; do sleep 5; done
+  sleep 60
   talosctl -n "$n" get mc -o yaml | grep -A3 "extraArgs" || true
   read -rp "Continue to next node? [enter] " </dev/tty
 done
